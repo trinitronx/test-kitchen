@@ -19,6 +19,7 @@
 require 'logger'
 require 'net/ssh'
 require 'net/scp'
+require 'net/ssh/proxy/command'
 require 'socket'
 
 require 'kitchen/errors'
@@ -95,6 +96,7 @@ module Kitchen
       args += %W{ -o IdentitiesOnly=yes } if options[:keys]
       args += %W{ -o LogLevel=#{logger.debug? ? "VERBOSE" : "ERROR"} }
       args += %W{ -o ForwardAgent=#{options[:forward_agent] ? "yes" : "no"} } if options.key? :forward_agent
+      args += %W{ -o ProxyCommand=#{options[:proxy_command]} } if options[:proxy_command]
       Array(options[:keys]).each { |ssh_key| args += %W{ -i #{ssh_key}} }
       args += %W{ -p #{port}}
       args += %W{ #{username}@#{hostname}}
@@ -120,7 +122,11 @@ module Kitchen
 
       begin
         logger.debug("[SSH] opening connection to #{self}")
-        Net::SSH.start(hostname, username, options)
+        connect_opts = options.dup
+        if connect_opts.delete(:proxy_command)
+          connect_opts[:proxy] = Net::SSH::Proxy::Command.new(options[:proxy_command])
+        end
+        Net::SSH.start(hostname, username, connect_opts)
       rescue *rescue_exceptions => e
         if (retries -= 1) > 0
           logger.info("[SSH] connection failed, retrying (#{e.inspect})")
