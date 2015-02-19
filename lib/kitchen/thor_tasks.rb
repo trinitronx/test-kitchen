@@ -16,9 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'thor'
+require "thor"
 
-require 'kitchen'
+require "kitchen"
 
 module Kitchen
 
@@ -35,26 +35,31 @@ module Kitchen
     def initialize(*args)
       super
       @config = Kitchen::Config.new
-      Kitchen.logger = Kitchen.default_file_logger
+      Kitchen.logger = Kitchen.default_file_logger(nil, false)
       yield self if block_given?
       define
     end
 
     private
 
+    # @return [Config] a Kitchen::Config
     attr_reader :config
 
+    # Generates a test Thor task for each instance and one to test all
+    # instances in serial.
+    #
+    # @api private
     def define
       config.instances.each do |instance|
         self.class.desc instance.name, "Run #{instance.name} test instance"
-        self.class.send(:define_method, instance.name.gsub(/-/, '_')) do
+        self.class.send(:define_method, instance.name.gsub(/-/, "_")) do
           instance.test(:always)
         end
       end
 
       self.class.desc "all", "Run all test instances"
       self.class.send(:define_method, :all) do
-        config.instances.each { |i| invoke i.name.gsub(/-/, '_') }
+        config.instances.each { |i| invoke i.name.gsub(/-/, "_") }
       end
     end
   end

@@ -2,7 +2,7 @@
 #
 # Author:: Fletcher Nichol (<fnichol@nichol.ca>)
 #
-# Copyright (C) 2012, Fletcher Nichol
+# Copyright (C) 2012, 2013, 2014 Fletcher Nichol
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,34 +16,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'pathname'
-require 'thread'
+require "pathname"
+require "thread"
 
-require 'kitchen/errors'
-require 'kitchen/logger'
-require 'kitchen/logging'
-require 'kitchen/shell_out'
-require 'kitchen/util'
+require "kitchen/errors"
+require "kitchen/logger"
+require "kitchen/logging"
+require "kitchen/shell_out"
+require "kitchen/configurable"
+require "kitchen/util"
 
-require 'kitchen/provisioner'
-require 'kitchen/provisioner/base'
-require 'kitchen/busser'
-require 'kitchen/color'
-require 'kitchen/collection'
-require 'kitchen/config'
-require 'kitchen/data_munger'
-require 'kitchen/driver'
-require 'kitchen/driver/base'
-require 'kitchen/driver/proxy'
-require 'kitchen/driver/ssh_base'
-require 'kitchen/instance'
-require 'kitchen/loader/yaml'
-require 'kitchen/metadata_chopper'
-require 'kitchen/platform'
-require 'kitchen/state_file'
-require 'kitchen/ssh'
-require 'kitchen/suite'
-require 'kitchen/version'
+require "kitchen/provisioner"
+require "kitchen/provisioner/base"
+require "kitchen/busser"
+require "kitchen/color"
+require "kitchen/collection"
+require "kitchen/config"
+require "kitchen/data_munger"
+require "kitchen/driver"
+require "kitchen/driver/base"
+require "kitchen/driver/ssh_base"
+require "kitchen/driver/proxy"
+require "kitchen/instance"
+require "kitchen/loader/yaml"
+require "kitchen/metadata_chopper"
+require "kitchen/platform"
+require "kitchen/state_file"
+require "kitchen/ssh"
+require "kitchen/suite"
+require "kitchen/version"
 
 # Test Kitchen base module.
 #
@@ -52,43 +53,90 @@ module Kitchen
 
   class << self
 
+    # @return [Logger] the common Kitchen logger
     attr_accessor :logger
-    attr_accessor :crashes
+
+    # @return [Mutex] a common mutex for global coordination
     attr_accessor :mutex
 
     # Returns the root path of the Kitchen gem source code.
     #
     # @return [Pathname] root path of gem
     def source_root
-      @source_root ||= Pathname.new(File.expand_path('../../', __FILE__))
+      @source_root ||= Pathname.new(File.expand_path("../../", __FILE__))
     end
 
-    def crashes?
-      ! crashes.empty?
-    end
-
+    # Returns a default logger which emits on standard output.
+    #
+    # @return [Logger] a logger
     def default_logger
-      Logger.new(:stdout => STDOUT, :level => env_log)
+      Logger.new(:stdout => $stdout, :level => Util.to_logger_level(env_log))
     end
 
-    def default_file_logger
-      logfile = File.expand_path(File.join(".kitchen", "logs", "kitchen.log"))
-      Logger.new(:stdout => STDOUT, :logdev => logfile, :level => env_log)
+    # Returns a default file logger which emits on standard output and to a
+    # log file.
+    #
+    # @param [Symbol] level logging level
+    # @param [Boolean] log_overwrite logging level
+    # @return [Logger] a logger
+    def default_file_logger(level = nil, log_overwrite = nil)
+      level ||= env_log
+      log_overwrite = log_overwrite.nil? ? env_log_overwrite : log_overwrite
+      log_location = File.expand_path(File.join(DEFAULT_LOG_DIR, "kitchen.log"))
+      log_location = log_location.to_s
+
+      Logger.new(
+          :stdout => $stdout,
+          :logdev => log_location,
+          :level => Util.to_logger_level(level),
+          :log_overwrite => log_overwrite
+      )
     end
 
-    private
+    # Returns whether or not standard output is associated with a terminal
+    # device (tty).
+    #
+    # @return [true,false] is there a tty?
+    def tty?
+      $stdout.tty?
+    end
 
+    # Determine the default log level from an environment variable, if it is
+    # set.
+    #
+    # @return [Symbol,nil] a log level or nil if not set
+    # @api private
     def env_log
-      level = ENV['KITCHEN_LOG'] && ENV['KITCHEN_LOG'].downcase.to_sym
-      level = Util.to_logger_level(level) unless level.nil?
+      ENV["KITCHEN_LOG"] && ENV["KITCHEN_LOG"].downcase.to_sym
+    end
+
+    # Determine the log overwriting logic from an environment variable,
+    # if it is set.
+    #
+    # @return [Boolean,nil]
+    # @api private
+    def env_log_overwrite
+      case ENV["KITCHEN_LOG_OVERWRITE"] && ENV["KITCHEN_LOG_OVERWRITE"].downcase
+      when nil, ""
+        nil
+      when "false", "f", "no"
+        false
+      else
+        true
+      end
     end
   end
 
   # Default log level verbosity
   DEFAULT_LOG_LEVEL = :info
 
+  # Overwrite the log file when Test Kitchen runs
+  DEFAULT_LOG_OVERWRITE = true
+
+  # Default base directory for integration tests, fixtures, etc.
   DEFAULT_TEST_DIR = "test/integration".freeze
 
+  # Default base directory for instance and common log files
   DEFAULT_LOG_DIR = ".kitchen/logs".freeze
 end
 

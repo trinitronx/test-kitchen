@@ -1,9 +1,11 @@
 # Test Kitchen
 
-[![Gem Version](https://badge.fury.io/rb/test-kitchen.png)](http://badge.fury.io/rb/test-kitchen)
-[![Build Status](https://secure.travis-ci.org/test-kitchen/test-kitchen.png?branch=master)](https://travis-ci.org/test-kitchen/test-kitchen)
-[![Code Climate](https://codeclimate.com/github/test-kitchen/test-kitchen.png)](https://codeclimate.com/github/test-kitchen/test-kitchen)
-[![Dependency Status](https://gemnasium.com/test-kitchen/test-kitchen.png)](https://gemnasium.com/test-kitchen/test-kitchen)
+[![Gem Version](https://badge.fury.io/rb/test-kitchen.svg)](http://badge.fury.io/rb/test-kitchen)
+[![Build Status](https://secure.travis-ci.org/test-kitchen/test-kitchen.svg?branch=master)](https://travis-ci.org/test-kitchen/test-kitchen)
+[![Code Climate](https://codeclimate.com/github/test-kitchen/test-kitchen.svg)](https://codeclimate.com/github/test-kitchen/test-kitchen)
+[![Test Coverage](https://codeclimate.com/github/test-kitchen/test-kitchen/coverage.svg)](https://codeclimate.com/github/test-kitchen/test-kitchen)
+[![Dependency Status](https://gemnasium.com/test-kitchen/test-kitchen.svg)](https://gemnasium.com/test-kitchen/test-kitchen)
+[![Inline docs](http://inch-ci.org/github/test-kitchen/test-kitchen.svg?branch=master)](http://inch-ci.org/github/test-kitchen/test-kitchen)
 
 |             |                                               |
 |-------------|-----------------------------------------------|
@@ -41,7 +43,7 @@ $ kitchen init
 ```
 
 A `.kitchen.yml` will be created in your project base directory. This file
-describes your testing confiuration; what you want to test and on which target
+describes your testing configuration; what you want to test and on which target
 platforms. Each of these suite and platform combinations are called instances.
 By default your instances will be converged with Chef Solo and run in Vagrant
 virtual machines.
@@ -71,11 +73,19 @@ run through all the instances in serial by running:
 $ kitchen test
 ```
 
+## Usage
+
 There is help included with the `kitchen help` subcommand which will list all
 subcommands and their usage:
 
 ```
 $ kitchen help test
+```
+
+More verbose logging (for both test-kitchen and the chef-solo/chef-zero provisioners) can be specified when running test-kitchen form the command line using:
+
+```
+$ kitchen test -l debug
 ```
 
 ## Documentation
